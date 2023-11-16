@@ -1,0 +1,76 @@
+public void setJsBridge(JsBridge jsBridge) {
+    webview.addJavascriptInterface(jsBridge, "YOUR_NAMESPACE");
+}
+
+@JavascriptInterface
+public void openBrowser(String url) {
+    try {
+        Intent intent = null;
+        if (url.startsWith("intent")) {
+            intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+        } else {
+            intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+        }
+        if (intent != null) {
+            if (isHw) {
+                intent.setPackage(getDefaultBrowser());
+            }
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            intent.setComponent(null);
+            intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+        }
+        //TODO:get context do startActivity
+        context.startActivity(intent);
+    } catch (Exception e) {
+    }
+}
+
+//When the user clicks the close button inside the Link page, this method is called
+@JavascriptInterface
+public void close() {
+    //TODO  close the ad page or activity.
+}
+(2).To integrate GSpace-Fully, you need to implement this method. This method is used to open a new WebView page.
+
+@JavascriptInterface
+public void openWebview(String url) {
+  //TODO  open a new page to display landingpage.
+   //TODO Open the current URL using a new instance of an Activity that displays GSpace.
+}
+
+public static boolean isHw() {
+    return "huawei".equalsIgnoreCase(Build.MANUFACTURER);
+}
+
+public static String getDefaultBrowser() {
+    String packageName = null, systemApp = null, userApp = null;
+    List<String> userAppList = new ArrayList<>();
+    Context context = GlobalCache.Singleton.getApplicationContext();
+    Intent browserIntent = new Intent("android.intent.action.VIEW", Uri.parse("https://"));
+    ResolveInfo resolveInfo = context.getPackageManager().resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY);
+    if (resolveInfo != null && resolveInfo.activityInfo != null) {
+        packageName = resolveInfo.activityInfo.packageName;
+    }
+    if (packageName == null || packageName.equals("android")) {
+        List<ResolveInfo> lists = context.getPackageManager().queryIntentActivities(browserIntent, 0);
+        for (ResolveInfo app : lists) {
+            if ((app.activityInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                systemApp = app.activityInfo.packageName;
+            } else {
+                userApp = app.activityInfo.packageName;
+                userAppList.add(userApp);
+            }
+        }
+        if (userAppList.contains("com.android.chrome")) {
+            packageName = "com.android.chrome";
+        } else {
+            if (systemApp != null) {
+                packageName = systemApp;
+            }
+            if (userApp != null) {
+                packageName = userApp;
+            }
+        }
+    }
+    return packageName;
+}
